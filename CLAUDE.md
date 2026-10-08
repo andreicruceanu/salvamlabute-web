@@ -16,7 +16,7 @@ Firebase (doar Auth), date-fns. Node 24 (`.nvmrc`), cu npm-ul livrat cu Node.
 
 - Fără bibliotecă de i18n; textele sunt scrise direct în română.
 - Firebase se importă doar din `"firebase/app"` și `"firebase/auth"`.
-- Un feature se importă doar prin `index.ts`-ul lui.
+- Un feature se importă doar prin `index.ts`-ul lui (`@/features/<nume>`); în interiorul lui, căi relative.
 - `shared/ui` nu face fetch și nu importă din `features` sau din `shared/api`.
 - Sumele de bani vin în unități minore și se formatează printr-o singură funcție din `shared/lib`.
 - Nu instala `openapi-typescript` în proiect; se rulează prin `npx`.
@@ -28,18 +28,19 @@ Firebase (doar Auth), date-fns. Node 24 (`.nvmrc`), cu npm-ul livrat cu Node.
 
 - `npm run dev` — server de dezvoltare Vite
 - `npm run build` — `tsc -b`, apoi `vite build` (singurul pas de verificare a tipurilor)
-- `npm run lint` — ESLint pe tot repo-ul
+- `npm run lint` — ESLint, inclusiv regulile de arhitectură și interdicția Firebase
 - `npm run preview` — servește `dist/`
-- `format` — nu există încă în `package.json` (Prettier e instalat, fără script și fără config)
-- `api:gen` — nu există încă în `package.json`
+- `npm run format` — Prettier pe tot repo-ul
+- `npm run api:gen` — generează `src/shared/api/schema.d.ts` prin `npx`; `PORT` din script e placeholder (vezi `README.md`)
 
+Aliasul `@/` înseamnă `src/`. Aplicația cere `.env.local` complet (vezi `.env.example`).
 Nu există test runner configurat.
 
 ## Documentație
 
 - `docs/stare-implementare.md` — ce există efectiv acum, ce urmează, ce a fost verificat prin rulare
 - `docs/decizii.md` — jurnal de decizii (Data / Decizie / Motiv / Consecințe), cele mai noi primele
-- `docs/arhitectura.md` — structura de foldere țintă și regulile de import între straturi
+- `docs/arhitectura.md` — structura de foldere și regulile de import între straturi (impuse de lint)
 - `docs/contract-backend.md` — rezumatul contractului cu backend-ul (auth, onboarding, erori, bani)
 
 ## Regula de mentenanță
@@ -53,4 +54,4 @@ Documentația se commitează în același commit cu codul. Un task nu e terminat
 
 ## De clarificat
 
-- Comenzile exacte pentru `format` și `api:gen` (vezi `docs/stare-implementare.md`).
+- Portul backend-ului local pentru `api:gen` (vezi `docs/stare-implementare.md`).

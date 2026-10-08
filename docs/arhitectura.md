@@ -1,70 +1,83 @@
 # Arhitectură
 
-> **ȚINTĂ — se aplică după pasul 1** din `stare-implementare.md`.
-> Nimic din acest fișier nu este implementat încă. Azi `src/` conține doar template-ul Vite
-> (`main.tsx`, `App.tsx`), iar regulile de import de mai jos nu sunt verificate de ESLint.
+Structura și regulile de mai jos sunt implementate (pasul 1) și verificate de `npm run lint`.
 
-## Structura de foldere țintă
+## Structura de foldere
 
 ```
 src/
-  app/
+  main.tsx          punctul de intrare
+  app/              providers.tsx, router.tsx, layouts/, guards/
   features/
-    <feature>/
-      index.ts
+    auth/           api/, components/, pages/, index.ts
+    onboarding/     api/, components/, pages/, index.ts
+    users/          api/, components/, pages/, index.ts
   shared/
-    ui/
-    api/
+    ui/             componente prezentaționale
+    api/            client.ts, errors/
     lib/
-    styles/
-    config/
+    styles/         tokens.css, reset.css
+    config/         env.ts, locale.ts
 ```
 
-Ce se știe sigur despre fiecare loc:
+Nu există `components/`, `hooks/` sau `utils/` în rădăcina `src/`.
 
-| Loc | Ce se știe |
-| --- | --- |
-| `features/<feature>` | Se expune doar prin `index.ts`-ul lui. |
-| `shared/ui` | Componente care nu fac fetch. |
-| `shared/api` | Clientul API. Parserul unic de erori stă în `shared/api/errors` (vezi `contract-backend.md`). |
-| `shared/lib` | Conține funcția unică de formatare a sumelor de bani. |
-| `app`, `shared/styles`, `shared/config` | Conținutul exact e de clarificat. |
+Folderele încă goale conțin un fișier `.gitkeep`; se șterge când apare primul fișier real.
 
-## Reguli de dependență între straturi
+## Straturi
 
-Reguli stabilite:
+Regulile sunt definite în `eslint.config.js`, cu `eslint-plugin-boundaries`.
 
-1. Un feature se importă doar prin `index.ts`-ul lui, niciodată prin fișierele lui interne.
-2. `shared/ui` nu importă din `features`.
-3. `shared/ui` nu importă din `shared/api` și nu face fetch.
-4. Firebase se importă doar din `"firebase/app"` și `"firebase/auth"`.
+| Strat        | Fișiere                                                |
+| ------------ | ------------------------------------------------------ |
+| `app`        | `src/app/**`                                           |
+| `feature`    | `src/features/<nume>/**`                               |
+| `shared-ui`  | `src/shared/ui/**`                                     |
+| `shared-api` | `src/shared/api/**`                                    |
+| `shared`     | restul din `src/shared/**` (`lib`, `styles`, `config`) |
 
-Tabelul complet (rândul importă din coloană). „Da" și „Nu" apar doar unde regula a fost stabilită; restul celulelor sunt de clarificat și nu trebuie presupuse.
+`src/main.tsx` nu aparține niciunui strat, deci importurile lui nu sunt verificate.
 
-| Importă ↓ / din → | `app` | `features` | `shared/ui` | `shared/api` | `shared/lib` | `shared/styles` | `shared/config` |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `app` | — | ? (doar prin `index.ts`) | ? | ? | ? | ? | ? |
-| `features/<feature>` | ? | alt feature: ? (doar prin `index.ts`) | ? | ? | ? | ? | ? |
-| `shared/ui` | ? | **Nu** | — | **Nu** | ? | ? | ? |
-| `shared/api` | ? | ? | ? | — | ? | ? | ? |
-| `shared/lib` | ? | ? | ? | ? | — | ? | ? |
-| `shared/styles` | ? | ? | ? | ? | ? | — | ? |
-| `shared/config` | ? | ? | ? | ? | ? | ? | — |
+## Reguli de dependență
 
-Regulile urmează să fie impuse cu `eslint-plugin-boundaries` (instalat, neconfigurat).
+Rândul importă din coloană.
+
+| Importă ↓ / din → | `app` | `feature` | `shared-ui` | `shared-api` | `shared` |
+| ----------------- | ----- | --------- | ----------- | ------------ | -------- |
+| `app`             | Da    | Da        | Da          | Da           | Da       |
+| `feature`         | Nu    | Da        | Da          | Da           | Da       |
+| `shared-ui`       | Nu    | Nu        | Da          | **Nu**       | Da       |
+| `shared-api`      | Nu    | Nu        | **Nu**      | Da           | Da       |
+| `shared`          | Nu    | Nu        | Nu          | Nu           | Da       |
+
+Reguli suplimentare:
+
+1. Un feature se importă doar prin `index.ts`-ul lui: `@/features/<nume>`. Orice import către un fișier intern al altui feature pică la lint, fie că e scris cu alias (`@/features/auth/api/x`), fie relativ (`../auth/api/x`). Regula se aplică și stratului `app`.
+2. În interiorul aceluiași feature se folosesc căi relative (`./api/x`). Aliasul `@/features/<nume>/...` este interzis peste tot, inclusiv în feature-ul propriu.
+3. Firebase se importă doar din `"firebase/app"` și `"firebase/auth"`. `"firebase"` și orice alt `"firebase/*"` pică la lint.
+4. `shared/ui` nu face fetch (regulă de disciplină; lintul verifică doar importurile).
+
+## Aliasul `@/`
+
+`@/` înseamnă `src/`. Este definit în trei locuri care trebuie ținute sincronizate:
+
+- `tsconfig.app.json` (`paths`) — pentru TypeScript;
+- `vite.config.ts` (`resolve.alias`) — pentru build și dev;
+- `eslint.config.js` (`import/resolver` → `typescript`) — pentru regulile de arhitectură; citește `tsconfig.app.json`.
 
 ## Cum se adaugă un feature nou
 
-1. Creezi folderul `src/features/<nume>/`.
-2. Creezi `src/features/<nume>/index.ts` și exporți din el doar ce trebuie folosit din afară.
-3. Din afara feature-ului imporți numai din acel `index.ts`.
+1. Creezi `src/features/<nume>/` cu `api/`, `components/`, `pages/` și `index.ts`.
+2. Exporți din `index.ts` doar ce trebuie folosit din afară.
+3. Din afară imporți numai `@/features/<nume>`; în interior folosești căi relative.
 4. Componentele reutilizabile fără date merg în `shared/ui`, nu în feature.
-5. Actualizezi `stare-implementare.md` în același commit.
+5. Rulezi `npm run lint`, apoi actualizezi `stare-implementare.md` în același commit.
+
+Nu e nevoie de nicio schimbare în `eslint.config.js`: orice folder din `src/features/` este automat un `feature`.
 
 ## De clarificat
 
-- Toate celulele marcate cu „?" din tabel. În special: dacă un feature poate importa alt feature, dacă `shared` poate importa din `app` sau `features` (în afară de `shared/ui`, unde e interzis), și ce își pot importa între ele subfolderele din `shared`.
-- Ce conține `app` (rute, provideri, layout?) și ce conțin `shared/styles` și `shared/config`.
-- Structura internă a unui feature (subfoldere, convenții de nume).
-- Dacă se folosesc aliasuri de import (de exemplu `@/`); azi nu există niciunul în `tsconfig.app.json` sau `vite.config.ts`.
-- Unde stă modulul unic de sesiune și unde stă codul Firebase.
+- Dacă un feature are voie să importe orice alt feature (acum da, prin `index.ts`) sau trebuie restrâns.
+- Unde stă modulul unic de sesiune și unde stă codul Firebase (`features/auth` sau `shared`).
+- Ce conțin `app/layouts` și `app/guards`, concret.
+- Dacă fișierele din afara straturilor (în afară de `main.tsx`) trebuie interzise prin lint; acum un folder nou în rădăcina `src/` nu ar fi semnalat.

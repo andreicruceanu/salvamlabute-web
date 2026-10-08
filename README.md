@@ -1,75 +1,34 @@
-# React + TypeScript + Vite
+# SalvamLabute — frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React pentru SalvamLabute, platformă de adopții și donații verificate. Aplicația este exclusiv în limba română. Backend-ul (.NET) este în alt repo.
 
-Currently, two official plugins are available:
+Documentația stă în [docs/](docs/); regulile de lucru sunt în [CLAUDE.md](CLAUDE.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Pornire
 
-## React Compiler
+1. Node 24 (vezi `.nvmrc`), minimum 24.12.
+2. `npm install`
+3. Copiază `.env.example` în `.env.local` și completează toate valorile. Aplicația nu pornește dacă lipsește vreuna.
+4. `npm run dev`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Comenzi
 
-## Expanding the ESLint configuration
+| Comandă           | Ce face                                            |
+| ----------------- | -------------------------------------------------- |
+| `npm run dev`     | server de dezvoltare                               |
+| `npm run build`   | verificare de tipuri (`tsc -b`) și build           |
+| `npm run lint`    | ESLint, inclusiv regulile de arhitectură           |
+| `npm run format`  | Prettier pe tot repo-ul                            |
+| `npm run api:gen` | generează `src/shared/api/schema.d.ts` din OpenAPI |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Generarea tipurilor API
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+`npm run api:gen` rulează `openapi-typescript@7.13.0` prin `npx` (nu se instalează în proiect, pentru că cere TypeScript 5) și citește schema de la backend-ul pornit local.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+<!--
+  PORT: scriptul `api:gen` din package.json conține literal `http://localhost:PORT/openapi/v1.json`.
+  Înlocuiește PORT cu portul HTTP al backend-ului local înainte de prima rulare.
+  În repo-ul backend-ului, profilul `http` din launchSettings.json folosește 5166 (nevalidat prin rulare).
+-->
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
-
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+Până când `PORT` nu este înlocuit în `package.json`, comanda eșuează.
